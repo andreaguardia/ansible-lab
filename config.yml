@@ -1,0 +1,26 @@
+- name: Standard config on all routers
+  hosts: routers
+  gather_facts: false
+
+  vars:                                         # Variables: change them here, they apply everywhere
+    city: "Cochabamba"
+    dns_servers: "8.8.8.8,1.1.1.1"
+
+  tasks:
+    - name: Apply standard settings
+      community.routeros.command:
+        commands:
+          - /snmp set location="{{ city }} - Lab - {{ inventory_hostname }}"
+          - /ip dns set servers={{ dns_servers }}
+          - /system clock set time-zone-name=America/La_Paz
+
+    - name: Verify settings
+      community.routeros.command:
+        commands:
+          - /snmp print
+          - /ip dns print
+      register: check
+
+    - name: Show result
+      ansible.builtin.debug:
+        var: check.stdout_lines                 # Print what the router answered

@@ -1,0 +1,45 @@
+- name: Configure Linux automation server
+  hosts: linux
+  gather_facts: true                            # Collect info about the server (OS, IP...)
+
+  tasks:
+    - name: Let chrony fix big clock jumps anytime (after suspend)
+      ansible.builtin.lineinfile:
+        path: /etc/chrony/chrony.conf
+        regexp: '^makestep'
+        line: 'makestep 1 -1'
+      become: true
+      notify: Restart chrony                    # Ring the bell only if the file changed
+
+    - name: Install basic tools
+      ansible.builtin.apt:
+        name: [htop, tree, snmp]
+        state: present                          # "Must be installed" (idempotent)
+        update_cache: true
+        cache_valid_time: 3600                  # Refresh the package list max once per hour
+      become: true                              # = sudo
+
+    - name: Create read-only NOC user
+      ansible.builtin.user:
+        name: nocviewer
+        shell: /bin/bash
+        state: present                          # "Must exist"
+      become: true
+
+    - name: Schedule daily router backup at 03:00
+      ansible.builtin.cron:
+        name: "ansible router backup"
+        minute: "0"
+        hour: "3"
+        job: "cd /home/ubuntu1/projects/ansible-lab && venv/bin/ansible-playbook backup.yml >> backup.log 2>&1"
+
+    - name: Show server info
+      ansible.builtin.debug:
+        msg: "{{ ansible_facts['distribution'] }} {{ ansible_facts['distribution_version'] }} - {{ ansible_facts['default_ipv4']['address'] }}"
+
+  handlers:                                     # Same level as "tasks:"
+    - name: Restart chrony
+      ansible.builtin.service:
+        name: chrony
+        state: restarted
+      become: true

@@ -1,0 +1,22 @@
+all:
+  children:
+    routers:
+      hosts:
+        R1:
+          ansible_host: 192.168.233.11
+        R2:
+          ansible_host: 192.168.233.12
+        R3:
+          ansible_host: 192.168.233.13
+      vars:
+        ansible_connection: ansible.netcommon.network_cli
+        ansible_network_os: community.routeros.routeros
+        ansible_network_cli_ssh_type: paramiko
+        ansible_user: netadmin+cet1024w
+        ansible_password: "{{ vault_net_password }}"
+    linux:
+      hosts:
+        ubuntu:
+          ansible_connection: local
+          ansible_python_interpreter: "{{ ansible_playbook_python }}"
+          ansible_become_exe: sudo.ws

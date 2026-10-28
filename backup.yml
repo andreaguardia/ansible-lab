@@ -1,0 +1,22 @@
+- name: Backup MikroTik configs                  # Name of the play
+  hosts: routers                                 # Who it runs on
+  gather_facts: false                            # Don't collect extra info (faster)
+
+  tasks:
+    - name: Create backups folder
+      ansible.builtin.file:
+        path: backups
+        state: directory                         # "This folder must exist"
+      delegate_to: localhost                     # Do it on Ubuntu, not on the router
+      run_once: true                             # Only once, not 3 times
+
+    - name: Export configuration
+      community.routeros.command:
+        commands: /export
+      register: export_out                       # Save the answer in a variable
+
+    - name: Save config to file
+      ansible.builtin.copy:
+        content: "{{ export_out.stdout[0] }}\n"   # The text from the router
+        dest: "backups/{{ inventory_hostname }}_{{ lookup('pipe', 'date +%Y-%m-%d') }}.rsc"
+      delegate_to: localhost

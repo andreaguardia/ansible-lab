@@ -1,0 +1,5 @@
+venv/
+.vault_pass
+backups/
+*.log
+group_vars/routers/vault.yml
